@@ -201,3 +201,7 @@ def delete_employee():
     write_db(db)
     add_log("Удаление", current_user_name, target['full_name'])
     return jsonify({'success': True})
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 8000))
+    app.run(host='0.0.0.0', port=port)

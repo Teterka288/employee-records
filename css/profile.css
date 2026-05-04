@@ -1,0 +1,134 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #f0f2f5;
+}
+
+.header {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 15px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header h1 {
+    font-size: 20px;
+}
+
+.btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 13px;
+    margin-left: 10px;
+    transition: all 0.2s ease;
+}
+
+.btn-white {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.btn-white:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.btn-red {
+    background: #f44336;
+    color: white;
+}
+
+.btn-red:hover {
+    background: #d32f2f;
+}
+
+.content {
+    padding: 30px;
+}
+
+.card {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    max-width: 600px;
+    margin: 0 auto;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card h2 {
+    margin-bottom: 15px;
+    color: #667eea;
+    font-size: 18px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #667eea;
+}
+
+.row {
+    display: flex;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.row:last-child {
+    border-bottom: none;
+}
+
+.label {
+    width: 170px;
+    font-weight: bold;
+    color: #555;
+    font-size: 14px;
+}
+
+.value {
+    flex: 1;
+    color: #333;
+    font-size: 14px;
+    word-break: break-word;
+}
+
+@media (max-width: 768px) {
+    .header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+        padding: 15px;
+    }
+    
+    .content {
+        padding: 15px;
+    }
+    
+    .card {
+        padding: 20px;
+    }
+    
+    .row {
+        flex-direction: column;
+        gap: 4px;
+    }
+    
+    .label {
+        width: 100%;
+    }
+}

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Профиль сотрудника</title>
+    <link rel="stylesheet" href="/css/employee_profile.css">
+    <link rel="stylesheet" href="/css/loader.css">
+</head>
+<body>
+
+<div class="header">
+    <h1>Профиль сотрудника</h1>
+    <div>
+        <button class="btn btn-white" onclick="window.history.back()">← Назад</button>
+        <button class="btn btn-white" onclick="showLoader('Загрузка...'); setTimeout(() => window.location.href='/html/dashboard.html', 400)">На главную</button>
+        <button class="btn btn-red" onclick="showLoader('Выход...'); setTimeout(() => { sessionStorage.removeItem('user'); window.location.href='/html/index.html'; }, 400)">Выйти</button>
+    </div>
+</div>
+
+<div class="content" id="profile-content"></div>
+
+<script src="/js/loader.js"></script>
+<script>
+const currentUser = JSON.parse(sessionStorage.getItem('user') || '{}');
+const params = new URLSearchParams(window.location.search);
+const empId = parseInt(params.get('id'));
+
+if (!currentUser.id) window.location.href = '/html/index.html';
+if (!empId) { alert('ID сотрудника не указан'); window.history.back(); }
+
+showLoader('Загрузка данных...');
+
+fetch('/api/get_employee', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({user_id: empId})
+})
+.then(r => r.json())
+.then(d => {
+    hideLoader();
+    
+    if (!d.success) { alert('Сотрудник не найден'); window.history.back(); return; }
+    
+    const p = d.user;
+    const ex = p.extra_info || {};
+    
+    let roleName = 'Сотрудник';
+    let roleClass = 'role-employee';
+    if (p.role === 'admin') { roleName = 'Старший администратор'; roleClass = 'role-admin'; }
+    else if (p.role === 'junior_admin') { roleName = 'Младший администратор'; roleClass = 'role-junior'; }
+    else if (p.role === 'hr') { roleName = 'Кадровик'; roleClass = 'role-hr'; }
+    
+    const showPassword = currentUser.role === 'admin' || 
+        (currentUser.role === 'junior_admin' && p.role !== 'admin') || 
+        (currentUser.role === 'hr' && p.role !== 'admin' && p.role !== 'junior_admin') || 
+        currentUser.id === p.id;
+    
+    const initials = p.full_name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+    
+    let extraHtml = '';
+    const hasExtra = ex.birth_date || ex.gender || ex.address || ex.passport || ex.birth_place || 
+                     ex.education || ex.experience || ex.previous_jobs || ex.marital_status || ex.kids || ex.notes;
+    
+    if (hasExtra) {
+        let genderName = {'male':'Мужской','female':'Женский'}[ex.gender] || '';
+        let educationName = {'secondary':'Среднее','vocational':'Среднее профессиональное','bachelor':'Высшее (бакалавриат)','master':'Высшее (магистратура)','higher':'Высшее (специалитет)'}[ex.education] || '';
+        let maritalName = {'single':'Холост/Не замужем','married':'Женат/Замужем','divorced':'Разведён/Разведена','widowed':'Вдовец/Вдова'}[ex.marital_status] || '';
+        
+        extraHtml = `
+            <div class="card">
+                <h3>📋 Личные данные</h3>
+                ${ex.birth_date ? `<div class="info-item"><span class="info-label">Дата рождения</span><span class="info-value">${ex.birth_date}</span></div>` : ''}
+                ${ex.gender ? `<div class="info-item"><span class="info-label">Пол</span><span class="info-value">${genderName}</span></div>` : ''}
+                ${ex.address ? `<div class="info-item"><span class="info-label">Адрес</span><span class="info-value">${ex.address}</span></div>` : ''}
+                ${ex.birth_place ? `<div class="info-item"><span class="info-label">Место рождения</span><span class="info-value">${ex.birth_place}</span></div>` : ''}
+            </div>
+            <div class="card">
+                <h3>📄 Документы</h3>
+                ${ex.passport ? `<div class="info-item"><span class="info-label">Паспорт</span><span class="info-value">${ex.passport}</span></div>` : ''}
+                ${ex.passport_date ? `<div class="info-item"><span class="info-label">Дата выдачи</span><span class="info-value">${ex.passport_date}</span></div>` : ''}
+                ${ex.passport_org ? `<div class="info-item"><span class="info-label">Кем выдан</span><span class="info-value">${ex.passport_org}</span></div>` : ''}
+            </div>
+            <div class="card">
+                <h3>🎓 Образование и карьера</h3>
+                ${ex.education ? `<div class="info-item"><span class="info-label">Образование</span><span class="info-value">${educationName}</span></div>` : ''}
+                ${ex.experience ? `<div class="info-item"><span class="info-label">Стаж работы</span><span class="info-value">${ex.experience}</span></div>` : ''}
+                ${ex.previous_jobs ? `<div class="info-item"><span class="info-label">Предыдущие места</span><span class="info-value">${ex.previous_jobs}</span></div>` : ''}
+            </div>
+            <div class="card">
+                <h3>👨‍👩‍👧‍👦 Семья</h3>
+                ${ex.marital_status ? `<div class="info-item"><span class="info-label">Семейное положение</span><span class="info-value">${maritalName}</span></div>` : ''}
+                ${ex.kids ? `<div class="info-item"><span class="info-label">Дети</span><span class="info-value">${ex.kids}</span></div>` : ''}
+            </div>
+            ${ex.notes ? `<div class="card full-width"><h3>📝 Примечания</h3><div class="info-item"><span class="info-value">${ex.notes}</span></div></div>` : ''}
+        `;
+    }
+    
+    document.getElementById('profile-content').innerHTML = `
+        <div class="profile-header">
+            <div class="avatar">${initials}</div>
+            <div class="profile-header-info">
+                <h2>${p.full_name}</h2>
+                <div class="position">${p.position}</div>
+                <div class="department">${p.department}</div>
+                <span class="role-badge ${roleClass}">${roleName}</span>
+            </div>
+        </div>
+        
+        <div class="cards-grid">
+            <div class="card">
+                <h3>💼 Рабочая информация</h3>
+                <div class="info-item"><span class="info-label">ID</span><span class="info-value">${p.id}</span></div>
+                <div class="info-item"><span class="info-label">Дата приема</span><span class="info-value">${p.hire_date}</span></div>
+                <div class="info-item"><span class="info-label">Должность</span><span class="info-value">${p.position}</span></div>
+                <div class="info-item"><span class="info-label">Отдел</span><span class="info-value">${p.department}</span></div>
+            </div>
+            <div class="card">
+                <h3>📞 Контакты</h3>
+                <div class="info-item"><span class="info-label">Телефон</span><span class="info-value">${p.phone}</span></div>
+                <div class="info-item"><span class="info-label">Почта</span><span class="info-value">${p.email}</span></div>
+                <div class="info-item"><span class="info-label">Логин</span><span class="info-value">${p.login}</span></div>
+                ${showPassword ? `<div class="info-item"><span class="info-label">Пароль</span><span class="info-value">${p.password}</span></div>` : ''}
+            </div>
+            ${extraHtml}
+            ${!hasExtra ? '<div class="card full-width"><div class="no-data">📭 Дополнительная информация не заполнена</div></div>' : ''}
+        </div>
+    `;
+})
+.catch(() => {
+    hideLoader();
+    alert('Ошибка соединения');
+});
+</script>
+</body>
+</html>

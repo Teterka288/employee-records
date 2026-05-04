@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Добавить сотрудника</title>
+    <link rel="stylesheet" href="/css/add_employee.css">
+    <link rel="stylesheet" href="/css/loader.css">
+</head>
+<body>
+
+<div class="modal">
+    <div class="icon">👤</div>
+    <h2>Добавить сотрудника</h2>
+    <p class="subtitle">Заполните информацию о новом сотруднике</p>
+    
+    <div class="form-group">
+        <label for="full_name">ФИО</label>
+        <input type="text" id="full_name" placeholder="Иванов Иван Иванович">
+    </div>
+    
+    <div class="form-group">
+        <label for="hire_date">Дата приема</label>
+        <input type="text" id="hire_date" placeholder="ДД.ММ.ГГГГ" maxlength="10" oninput="formatDate(this)">
+    </div>
+    
+    <div class="form-row">
+        <div class="form-group">
+            <label for="position">Должность</label>
+            <input type="text" id="position" placeholder="Менеджер">
+        </div>
+        <div class="form-group">
+            <label for="department">Отдел</label>
+            <input type="text" id="department" placeholder="Отдел продаж">
+        </div>
+    </div>
+    
+    <div class="form-row">
+        <div class="form-group">
+            <label for="phone">Телефон</label>
+            <input type="tel" id="phone" placeholder="+7 900 123-45-67" oninput="formatPhone(this)">
+        </div>
+        <div class="form-group">
+            <label for="email">Почта</label>
+            <input type="email" id="email" placeholder="example@mail.com">
+        </div>
+    </div>
+    
+    <div class="form-row">
+        <div class="form-group">
+            <label for="login">Логин</label>
+            <input type="text" id="login" placeholder="Оставьте пустым для автогенерации">
+        </div>
+        <div class="form-group">
+            <label for="password">Пароль</label>
+            <input type="password" id="password" placeholder="Придумайте пароль">
+        </div>
+    </div>
+    
+    <div class="form-group">
+        <label for="role">Роль</label>
+        <select id="role">
+            <option value="employee">Сотрудник</option>
+            <option value="hr">Кадровик</option>
+            <option value="junior_admin">Младший администратор</option>
+            <option value="admin">Старший администратор</option>
+        </select>
+    </div>
+    
+    <div class="buttons">
+        <button class="btn btn-cancel" onclick="window.history.back()">Отмена</button>
+        <button class="btn btn-info" onclick="openExtraInfo()">Добавить больше информации</button>
+        <button class="btn btn-save" onclick="addEmployee()">Добавить</button>
+    </div>
+</div>
+
+<script src="/js/loader.js"></script>
+<script>
+const currentUser = JSON.parse(sessionStorage.getItem('user') || '{}');
+
+function formatPhone(input) {
+    let value = input.value.replace(/\D/g, '');
+    if (value.startsWith('7') || value.startsWith('8')) value = value.substring(1);
+    
+    let formatted = '+7 ';
+    if (value.length > 0) formatted += value.substring(0, 3);
+    if (value.length > 3) formatted += ' ' + value.substring(3, 6);
+    if (value.length > 6) formatted += '-' + value.substring(6, 8);
+    if (value.length > 8) formatted += '-' + value.substring(8, 10);
+    
+    input.value = formatted;
+}
+
+function formatDate(input) {
+    let value = input.value.replace(/\D/g, '');
+    if (value.length >= 8) {
+        input.value = value.substring(0,2) + '.' + value.substring(2,4) + '.' + value.substring(4,8);
+    }
+}
+
+function openExtraInfo() {
+    const basicData = {
+        full_name: document.getElementById('full_name').value,
+        hire_date: document.getElementById('hire_date').value,
+        position: document.getElementById('position').value,
+        department: document.getElementById('department').value,
+        phone: document.getElementById('phone').value,
+        email: document.getElementById('email').value,
+        login: document.getElementById('login').value.trim(),
+        password: document.getElementById('password').value,
+        role: document.getElementById('role').value
+    };
+    sessionStorage.setItem('temp_employee', JSON.stringify(basicData));
+    showLoader('Загрузка...');
+    setTimeout(() => window.location.href = '/html/extra_info.html', 400);
+}
+
+function addEmployee() {
+    const data = {
+        full_name: document.getElementById('full_name').value,
+        hire_date: document.getElementById('hire_date').value,
+        position: document.getElementById('position').value,
+        department: document.getElementById('department').value,
+        phone: document.getElementById('phone').value,
+        email: document.getElementById('email').value,
+        login: document.getElementById('login').value.trim(),
+        password: document.getElementById('password').value,
+        role: document.getElementById('role').value,
+        current_user: currentUser?.full_name || 'Система'
+    };
+    
+    if (!data.full_name || !data.position || !data.department || !data.password) {
+        alert('Заполните обязательные поля: ФИО, Должность, Отдел, Пароль');
+        return;
+    }
+    
+    showLoader('Добавление сотрудника...');
+    
+    fetch('/api/add_employee', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    })
+    .then(r => r.json())
+    .then(res => {
+        hideLoader();
+        if (res.success) {
+            alert('Сотрудник добавлен! Логин: ' + res.employee.login);
+            sessionStorage.removeItem('temp_employee');
+            showLoader('Переход...');
+            setTimeout(() => window.location.href = '/html/dashboard.html', 500);
+        } else {
+            alert('Ошибка: ' + (res.message || 'неизвестная ошибка'));
+        }
+    })
+    .catch(() => {
+        hideLoader();
+        alert('Ошибка соединения с сервером');
+    });
+}
+</script>
+</body>
+</html>

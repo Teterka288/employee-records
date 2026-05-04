@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Личный кабинет</title>
+    <link rel="stylesheet" href="profile.css">
+    <link rel="stylesheet" href="loader.css">
+</head>
+<body>
+
+<div class="header">
+    <h1>Личный кабинет</h1>
+    <div>
+        <button class="btn btn-white" onclick="showLoader('Загрузка...'); setTimeout(() => window.location.href='/html/dashboard.html', 400)">На главную</button>
+        <button class="btn btn-red" onclick="showLoader('Выход...'); setTimeout(() => { sessionStorage.removeItem('user'); window.location.href='/html/index.html'; }, 400)">Выйти</button>
+    </div>
+</div>
+
+<div class="content">
+    <div class="card" id="info"></div>
+</div>
+
+<script src="loader.js"></script>
+<script>
+const u = JSON.parse(sessionStorage.getItem('user') || '{}');
+
+if (!u.id) {
+    window.location.href = '/html/index.html';
+}
+
+showLoader('Загрузка данных...');
+
+fetch('/api/get_profile', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({user_id: u.id})
+})
+.then(r => r.json())
+.then(d => {
+    hideLoader();
+    const p = d.user;
+    const ex = p.extra_info || {};
+    
+    let roleName = 'Сотрудник';
+    if (p.role === 'admin') roleName = 'Старший администратор';
+    if (p.role === 'junior_admin') roleName = 'Младший администратор';
+    if (p.role === 'hr') roleName = 'Кадровик';
+    
+    let genderName = '';
+    if (ex.gender === 'male') genderName = 'Мужской';
+    else if (ex.gender === 'female') genderName = 'Женский';
+    else genderName = 'Не указан';
+    
+    let educationName = '';
+    if (ex.education === 'secondary') educationName = 'Среднее';
+    else if (ex.education === 'vocational') educationName = 'Среднее профессиональное';
+    else if (ex.education === 'bachelor') educationName = 'Высшее (бакалавриат)';
+    else if (ex.education === 'master') educationName = 'Высшее (магистратура)';
+    else if (ex.education === 'higher') educationName = 'Высшее (специалитет)';
+    else educationName = 'Не указано';
+    
+    let maritalName = '';
+    if (ex.marital_status === 'single') maritalName = 'Холост/Не замужем';
+    else if (ex.marital_status === 'married') maritalName = 'Женат/Замужем';
+    else if (ex.marital_status === 'divorced') maritalName = 'Разведён/Разведена';
+    else if (ex.marital_status === 'widowed') maritalName = 'Вдовец/Вдова';
+    else maritalName = 'Не указано';
+    
+    document.getElementById('info').innerHTML = `
+        <h2>Основная информация</h2>
+        <div class="row"><span class="label">ID:</span><span class="value">${p.id}</span></div>
+        <div class="row"><span class="label">ФИО:</span><span class="value">${p.full_name}</span></div>
+        <div class="row"><span class="label">Дата приема:</span><span class="value">${p.hire_date}</span></div>
+        <div class="row"><span class="label">Должность:</span><span class="value">${p.position}</span></div>
+        <div class="row"><span class="label">Отдел:</span><span class="value">${p.department}</span></div>
+        <div class="row"><span class="label">Телефон:</span><span class="value">${p.phone}</span></div>
+        <div class="row"><span class="label">Почта:</span><span class="value">${p.email}</span></div>
+        <div class="row"><span class="label">Логин:</span><span class="value">${p.login}</span></div>
+        <div class="row"><span class="label">Пароль:</span><span class="value">${p.password}</span></div>
+        <div class="row"><span class="label">Роль:</span><span class="value">${roleName}</span></div>
+        
+        ${ex.birth_date || ex.gender || ex.address || ex.passport ? `
+        <h2 style="margin-top:25px;">Дополнительная информация</h2>
+        ${ex.birth_date ? `<div class="row"><span class="label">Дата рождения:</span><span class="value">${ex.birth_date}</span></div>` : ''}
+        ${ex.gender ? `<div class="row"><span class="label">Пол:</span><span class="value">${genderName}</span></div>` : ''}
+        ${ex.address ? `<div class="row"><span class="label">Адрес:</span><span class="value">${ex.address}</span></div>` : ''}
+        ${ex.birth_place ? `<div class="row"><span class="label">Место рождения:</span><span class="value">${ex.birth_place}</span></div>` : ''}
+        ${ex.passport ? `<div class="row"><span class="label">Паспорт:</span><span class="value">${ex.passport}</span></div>` : ''}
+        ${ex.passport_date ? `<div class="row"><span class="label">Дата выдачи:</span><span class="value">${ex.passport_date}</span></div>` : ''}
+        ${ex.passport_org ? `<div class="row"><span class="label">Кем выдан:</span><span class="value">${ex.passport_org}</span></div>` : ''}
+        ${ex.education ? `<div class="row"><span class="label">Образование:</span><span class="value">${educationName}</span></div>` : ''}
+        ${ex.experience ? `<div class="row"><span class="label">Стаж работы:</span><span class="value">${ex.experience}</span></div>` : ''}
+        ${ex.previous_jobs ? `<div class="row"><span class="label">Предыдущие места:</span><span class="value">${ex.previous_jobs}</span></div>` : ''}
+        ${ex.marital_status ? `<div class="row"><span class="label">Семейное положение:</span><span class="value">${maritalName}</span></div>` : ''}
+        ${ex.kids ? `<div class="row"><span class="label">Дети:</span><span class="value">${ex.kids}</span></div>` : ''}
+        ${ex.notes ? `<div class="row"><span class="label">Примечания:</span><span class="value">${ex.notes}</span></div>` : ''}
+        ` : '<p style="color:#999;margin-top:20px;">Дополнительная информация не заполнена</p>'}
+    `;
+})
+.catch(() => {
+    hideLoader();
+    alert('Ошибка загрузки данных');
+});
+</script>
+</body>
+</html>

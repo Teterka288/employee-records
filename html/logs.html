@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Логи действий</title>
+    <link rel="stylesheet" href="/css/dashboard.css">
+    <link rel="stylesheet" href="/css/loader.css">
+    <style>
+        .log-entry {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        .log-entry.add { border-left-color: #4CAF50; }
+        .log-entry.edit { border-left-color: #2196F3; }
+        .log-entry.delete { border-left-color: #f44336; }
+        .log-entry.login { border-left-color: #FF9800; }
+        .log-time { color: #999; font-size: 12px; }
+        .log-action { font-weight: bold; margin: 5px 0; }
+        .log-details { color: #666; font-size: 13px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>История действий</h1>
+    <div>
+        <button class="btn btn-white" onclick="window.location.href='/html/dashboard.html'">На главную</button>
+        <button class="btn btn-red" onclick="sessionStorage.removeItem('user'); window.location.href='/html/index.html'">Выйти</button>
+    </div>
+</div>
+
+<div class="content" id="logs-container"></div>
+
+<script src="/js/loader.js"></script>
+<script>
+const u = JSON.parse(sessionStorage.getItem('user') || '{}');
+
+// Проверка: только админы
+if (u.role !== 'admin' && u.role !== 'junior_admin') {
+    alert('Доступ запрещён. Только для администраторов.');
+    window.location.href = '/html/dashboard.html';
+}
+
+showLoader('Загрузка логов...');
+
+fetch('/api/get_logs', {method:'POST'})
+    .then(r => r.json())
+    .then(d => {
+        hideLoader();
+        const container = document.getElementById('logs-container');
+        
+        if (d.logs.length === 0) {
+            container.innerHTML = '<p style="text-align:center;color:#999;margin-top:50px;">Логов пока нет</p>';
+            return;
+        }
+        
+        container.innerHTML = d.logs.map(log => {
+            let cssClass = '';
+            if (log.action.includes('Добавление')) cssClass = 'add';
+            else if (log.action.includes('Редактирование')) cssClass = 'edit';
+            else if (log.action.includes('Удаление')) cssClass = 'delete';
+            else if (log.action.includes('Вход')) cssClass = 'login';
+            
+            return `
+                <div class="log-entry ${cssClass}">
+                    <div class="log-time">${log.timestamp}</div>
+                    <div class="log-action">${log.action}</div>
+                    <div class="log-details">
+                        <strong>${log.user}</strong> → ${log.target}
+                        ${log.details ? '<br>' + log.details : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    });
+</script>
+</body>
+</html>

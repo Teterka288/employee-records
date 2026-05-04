@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Вход</title>
+    <link rel="stylesheet" href="loader.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #4ace38, #6f29a8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .box {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            width: 320px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        h1 { margin-bottom: 5px; font-size: 22px; }
+        h2 { margin-bottom: 25px; color: #777; font-size: 14px; font-weight: normal; }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 15px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover { background: #45a049; }
+        .hint { margin-top: 20px; font-size: 12px; color: #999; }
+        .error { color: #f44336; margin-top: 10px; display: none; }
+    </style>
+</head>
+<body>
+<div class="box">
+    <h1>Личные дела</h1>
+    <h2>Вход в систему</h2>
+    <input type="text" id="login" placeholder="Логин или Email">
+    <input type="password" id="password" placeholder="Пароль">
+    <button onclick="doLogin()">Войти</button>
+    <div class="error" id="error">Неверный логин или пароль</div>
+</div>
+
+<script src="loader.js"></script>
+<script>
+function doLogin() {
+    showLoader('Вход в систему...', '/index.html');
+    
+    fetch('/api/login', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            login: document.getElementById('login').value.trim(),
+            password: document.getElementById('password').value
+        })
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.success) {
+            sessionStorage.setItem('user', JSON.stringify(d.user));
+            setTimeout(() => {
+                window.location.href = '/html/dashboard.html';
+            }, 800);
+        } else {
+            hideLoader();
+            document.getElementById('error').style.display = 'block';
+            setTimeout(() => document.getElementById('error').style.display = 'none', 2000);
+        }
+    })
+    .catch(() => {
+        hideLoader();
+        alert('Ошибка соединения с сервером');
+    });
+}
+</script>
+</body>
+</html>

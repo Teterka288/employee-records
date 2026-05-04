@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Редактировать доп. информацию</title>
+    <link rel="stylesheet" href="add_employee.css">
+    <link rel="stylesheet" href="loader.css">
+</head>
+<body>
+
+<div class="modal">
+    <div class="icon">📋</div>
+    <h2>Редактировать доп. информацию</h2>
+    <p class="subtitle" id="edit-subtitle"></p>
+    
+    <input type="hidden" id="edit-id">
+    <input type="hidden" id="current-user-role">
+    
+    <div class="form-row">
+        <div class="form-group">
+            <label for="birth_date">Дата рождения</label>
+            <input type="text" id="birth_date" placeholder="ДД.ММ.ГГГГ" maxlength="10" oninput="formatDate(this)">
+        </div>
+        <div class="form-group">
+            <label for="gender">Пол</label>
+            <select id="gender">
+                <option value="">Не указан</option>
+                <option value="male">Мужской</option>
+                <option value="female">Женский</option>
+            </select>
+        </div>
+    </div>
+    
+    <div class="form-group">
+        <label for="address">Адрес проживания</label>
+        <input type="text" id="address" placeholder="Город, улица, дом">
+    </div>
+    
+    <div class="form-row">
+        <div class="form-group">
+            <label for="passport">Серия и номер паспорта</label>
+            <input type="text" id="passport" placeholder="0000 000000" maxlength="11">
+        </div>
+        <div class="form-group">
+            <label for="passport_date">Дата выдачи паспорта</label>
+            <input type="text" id="passport_date" placeholder="ДД.ММ.ГГГГ" maxlength="10" oninput="formatDate(this)">
+        </div>
+    </div>
+    
+    <div class="form-group">
+        <label for="passport_org">Кем выдан паспорт</label>
+        <input type="text" id="passport_org" placeholder="Отделом УФМС России...">
+    </div>
+    
+    <div class="form-group">
+        <label for="birth_place">Место рождения</label>
+        <input type="text" id="birth_place" placeholder="Город, область, страна">
+    </div>
+    
+    <div class="form-group">
+        <label for="education">Образование</label>
+        <select id="education">
+            <option value="">Не указано</option>
+            <option value="secondary">Среднее</option>
+            <option value="vocational">Среднее профессиональное</option>
+            <option value="bachelor">Высшее (бакалавриат)</option>
+            <option value="master">Высшее (магистратура)</option>
+            <option value="higher">Высшее (специалитет)</option>
+        </select>
+    </div>
+    
+    <div class="form-group">
+        <label for="experience">Стаж работы (лет)</label>
+        <input type="text" id="experience" placeholder="Например: 5 лет">
+    </div>
+    
+    <div class="form-group">
+        <label for="previous_jobs">Предыдущие места работы</label>
+        <textarea id="previous_jobs" placeholder="Где работал ранее..."></textarea>
+    </div>
+    
+    <div class="form-group">
+        <label for="marital_status">Семейное положение</label>
+        <select id="marital_status">
+            <option value="">Не указано</option>
+            <option value="single">Холост/Не замужем</option>
+            <option value="married">Женат/Замужем</option>
+            <option value="divorced">Разведён/Разведена</option>
+            <option value="widowed">Вдовец/Вдова</option>
+        </select>
+    </div>
+    
+    <div class="form-group">
+        <label for="kids">Дети (количество и возраст)</label>
+        <input type="text" id="kids" placeholder="Например: 2 ребенка (5 и 8 лет)">
+    </div>
+    
+    <div class="form-group">
+        <label for="notes">Примечания</label>
+        <textarea id="notes" placeholder="Дополнительные заметки..."></textarea>
+    </div>
+    
+    <div class="buttons">
+        <button class="btn btn-cancel" onclick="window.history.back()">Назад</button>
+        <button class="btn btn-save" onclick="saveExtraInfo()">Сохранить</button>
+    </div>
+</div>
+
+<script src="loader.js"></script>
+<script>
+const currentUser = JSON.parse(sessionStorage.getItem('user') || '{}');
+const params = new URLSearchParams(window.location.search);
+const empId = parseInt(params.get('id'));
+
+if (!empId) {
+    alert('ID сотрудника не указан');
+    window.location.href = '/html/dashboard.html';
+}
+
+showLoader('Загрузка данных...');
+
+fetch('/api/get_employees', {method:'POST'})
+    .then(r => r.json())
+    .then(d => {
+        const emp = d.employees.find(e => e.id === empId);
+        if (!emp) {
+            hideLoader();
+            alert('Сотрудник не найден');
+            window.location.href = '/html/dashboard.html';
+            return;
+        }
+        
+        hideLoader();
+        
+        const ex = emp.extra_info || {};
+        
+        document.getElementById('edit-id').value = emp.id;
+        document.getElementById('current-user-role').value = currentUser.role;
+        document.getElementById('edit-subtitle').textContent = emp.full_name;
+        document.getElementById('birth_date').value = ex.birth_date || '';
+        document.getElementById('gender').value = ex.gender || '';
+        document.getElementById('address').value = ex.address || '';
+        document.getElementById('passport').value = ex.passport || '';
+        document.getElementById('passport_date').value = ex.passport_date || '';
+        document.getElementById('passport_org').value = ex.passport_org || '';
+        document.getElementById('birth_place').value = ex.birth_place || '';
+        document.getElementById('education').value = ex.education || '';
+        document.getElementById('experience').value = ex.experience || '';
+        document.getElementById('previous_jobs').value = ex.previous_jobs || '';
+        document.getElementById('marital_status').value = ex.marital_status || '';
+        document.getElementById('kids').value = ex.kids || '';
+        document.getElementById('notes').value = ex.notes || '';
+    })
+    .catch(() => {
+        hideLoader();
+        alert('Ошибка соединения');
+    });
+
+function formatDate(input) {
+    let value = input.value.replace(/\D/g, '');
+    if (value.length >= 8) {
+        input.value = value.substring(0,2) + '.' + value.substring(2,4) + '.' + value.substring(4,8);
+    }
+}
+
+function saveExtraInfo() {
+    const extraData = {
+        birth_date: document.getElementById('birth_date').value,
+        gender: document.getElementById('gender').value,
+        address: document.getElementById('address').value,
+        passport: document.getElementById('passport').value,
+        passport_date: document.getElementById('passport_date').value,
+        passport_org: document.getElementById('passport_org').value,
+        birth_place: document.getElementById('birth_place').value,
+        education: document.getElementById('education').value,
+        experience: document.getElementById('experience').value,
+        previous_jobs: document.getElementById('previous_jobs').value,
+        marital_status: document.getElementById('marital_status').value,
+        kids: document.getElementById('kids').value,
+        notes: document.getElementById('notes').value
+    };
+    
+    showLoader('Сохранение...');
+    
+    fetch('/api/update_extra_info', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            id: empId,
+            current_user_role: currentUser.role,
+            current_user_id: currentUser.id,
+            extra_info: extraData
+        })
+    })
+    .then(r => r.json())
+    .then(res => {
+        hideLoader();
+        if (res.success) {
+            alert('Доп. информация сохранена!');
+            window.history.back();
+        } else {
+            alert('Ошибка: ' + (res.message || 'не удалось сохранить'));
+        }
+    })
+    .catch(() => {
+        hideLoader();
+        alert('Ошибка соединения');
+    });
+}
+</script>
+</body>
+</html>

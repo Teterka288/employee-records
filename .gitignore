@@ -2,7 +2,3 @@ __pycache__/
 *.pyc
 data.json
 logs.json
-__pycache__/
-*.pyc
-data.json
-logs.json

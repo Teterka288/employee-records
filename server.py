@@ -3,22 +3,24 @@ import json
 import os
 from datetime import datetime
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 app = Flask(__name__)
 
 def read_db():
-    with open('data.json', 'r', encoding='utf-8') as f:
+    with open(os.path.join(BASE_DIR, 'data.json'), 'r', encoding='utf-8') as f:
         return json.load(f)
 
 def write_db(data):
-    with open('data.json', 'w', encoding='utf-8') as f:
+    with open(os.path.join(BASE_DIR, 'data.json'), 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 def read_logs():
-    with open('logs.json', 'r', encoding='utf-8') as f:
+    with open(os.path.join(BASE_DIR, 'logs.json'), 'r', encoding='utf-8') as f:
         return json.load(f)
 
 def write_logs(logs):
-    with open('logs.json', 'w', encoding='utf-8') as f:
+    with open(os.path.join(BASE_DIR, 'logs.json'), 'w', encoding='utf-8') as f:
         json.dump(logs, f, ensure_ascii=False, indent=2)
 
 def add_log(action, user_name, target_name, details=""):
@@ -167,7 +169,6 @@ def update_extra_info():
     db = read_db()
     
     emp_id = data.get('id')
-    current_user_role = data.get('current_user_role')
     current_user_name = data.get('current_user_name', 'Неизвестно')
     
     for emp in db['employees']:
@@ -200,6 +201,3 @@ def delete_employee():
     write_db(db)
     add_log("Удаление", current_user_name, target['full_name'])
     return jsonify({'success': True})
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8000)
